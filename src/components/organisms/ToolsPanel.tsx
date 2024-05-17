@@ -1,8 +1,8 @@
-import { Box, Flex } from "@chakra-ui/react";
-import React, { useEffect, useMemo, useState } from "react";
+import { Box } from "@chakra-ui/react";
+import React, { useMemo, useState } from "react";
 
 import { JSONFileUploader } from "../atoms";
-import PointsTable from "../molecules/PointsTable";
+import { PointsTable } from "../molecules";
 
 interface ToolsPanelProps {}
 
@@ -20,11 +20,8 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = () => {
     fromCountries: string[];
     toCountries: string[];
     givenPoints: {
-      fromCountry: string;
-      points: {
-        jury: number[];
-        televoters: number[];
-      };
+      toCountry: string;
+      points: number[];
     }[];
   } => {
     if (!JSONString) {
@@ -37,57 +34,48 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = () => {
 
     const parsedJSON: FromToCountryPointsEntity[] = JSON.parse(JSONString);
 
-    const fromCountryList = parsedJSON
-      .slice(0, 10)
-      .map((entity) => entity.from_country);
-    const toCountryList = parsedJSON
-      .slice(0, 10)
-      .map((entity) => entity.to_country);
+    const fromCountryList = parsedJSON.map((entity) => entity.from_country);
+    const toCountryList = parsedJSON.map((entity) => entity.to_country);
 
     const uniqueFromCountryList = Array.from(new Set(fromCountryList));
     const uniqueToCountryList = Array.from(new Set(toCountryList));
 
-    const givenPoints = parsedJSON.slice(0, 10).map((entity) => {
-      const pointsMapForJury: Map<string, number[]> = new Map();
+    const pointsMapForJury: Map<string, number[]> = new Map();
+    const pointsMapForTelevoters: Map<string, number[]> = new Map();
 
+    const givenPoints = parsedJSON.forEach((entity) => {
       if (entity.jury_or_televoting === "J") {
-        if (pointsMapForJury.has(entity.from_country)) {
-          pointsMapForJury.set(entity.from_country, [
-            ...pointsMapForJury.get(entity.from_country)!,
+        if (pointsMapForJury.has(entity.to_country)) {
+          pointsMapForJury.set(entity.to_country, [
+            ...pointsMapForJury.get(entity.to_country)!,
             entity.total_points,
           ]);
         } else {
-          pointsMapForJury.set(entity.from_country, [entity.total_points]);
+          pointsMapForJury.set(entity.to_country, [entity.total_points]);
         }
       }
 
-      // const fromCountry = entity.from_country;
-
-      // const pointsFromJury = parsedJSON
-      //   .filter(
-      //     (entity) =>
-      //       entity.from_country === fromCountry &&
-      //       entity.jury_or_televoting === "J"
-      //   )
-      //   .map((entity) => entity.total_points);
-
-      // const pointsFromTelevoters = parsedJSON
-      //   .filter(
-      //     (entity) =>
-      //       entity.from_country === fromCountry &&
-      //       entity.jury_or_televoting === "T"
-      //   )
-      //   .map((entity) => entity.total_points);
-
-      return pointsMapForJury;
+      if (entity.jury_or_televoting === "T") {
+        if (pointsMapForTelevoters.has(entity.to_country)) {
+          pointsMapForTelevoters.set(entity.to_country, [
+            ...pointsMapForTelevoters.get(entity.to_country)!,
+            entity.total_points,
+          ]);
+        } else {
+          pointsMapForTelevoters.set(entity.to_country, [entity.total_points]);
+        }
+      }
     });
 
-    console.log("givenPoints", givenPoints);
+    const arrayOfPoints = Array.from(pointsMapForJury, ([name, value]) => ({
+      toCountry: name,
+      points: value,
+    }));
 
     return {
       fromCountries: uniqueFromCountryList,
       toCountries: uniqueToCountryList,
-      givenPoints: [],
+      givenPoints: arrayOfPoints,
     };
   };
 

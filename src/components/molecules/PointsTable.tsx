@@ -5,15 +5,12 @@ interface PointsTableProps {
   fromCountries: string[];
   toCountries: string[];
   givenPoints: {
-    fromCountry: string;
-    points: {
-      jury: number[];
-      televoters: number[];
-    };
+    toCountry: string;
+    points: number[];
   }[];
 }
 
-const PointsTable: React.FC<PointsTableProps> = ({
+export const PointsTable: React.FC<PointsTableProps> = ({
   fromCountries,
   toCountries,
   givenPoints,
@@ -31,7 +28,7 @@ const PointsTable: React.FC<PointsTableProps> = ({
       >
         <Thead>
           <Tr>
-            <Td background="red">*</Td>
+            <Td background="red.200">*</Td>
             {fromCountries.map((fromCountry) => (
               <Td
                 paddingY={0}
@@ -52,6 +49,11 @@ const PointsTable: React.FC<PointsTableProps> = ({
 
         <Tbody>
           {toCountries.map((toCountry, index) => {
+            const totalPoints = givenPoints[index].points.reduce(
+              (sum, point) => (sum += point),
+              0
+            );
+
             return (
               <Tr key={toCountry}>
                 <Td
@@ -67,8 +69,25 @@ const PointsTable: React.FC<PointsTableProps> = ({
                   </Tooltip>
                 </Td>
 
-                {givenPoints[index].points.televoters.map((point) => (
-                  <Td paddingY={0} paddingX={1} fontSize="10px">
+                <Td
+                  paddingY={0}
+                  paddingX={1}
+                  fontSize="sm"
+                  color="white"
+                  fontWeight={700}
+                  textTransform="uppercase"
+                  background="green"
+                >
+                  {totalPoints}
+                </Td>
+
+                {givenPoints[index].points.map((point) => (
+                  <Td
+                    paddingY={0}
+                    paddingX={1}
+                    fontSize="10px"
+                    key={`${toCountry}_${point}_${index}`}
+                  >
                     {point}
                   </Td>
                 ))}
@@ -80,5 +99,3 @@ const PointsTable: React.FC<PointsTableProps> = ({
     </>
   );
 };
-
-export default PointsTable;
