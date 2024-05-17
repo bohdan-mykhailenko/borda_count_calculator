@@ -21,7 +21,10 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = () => {
     toCountries: string[];
     givenPoints: {
       toCountry: string;
-      points: number[];
+      points: {
+        jury: number[];
+        televoters: number[];
+      };
     }[];
   } => {
     if (!JSONString) {
@@ -34,47 +37,66 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = () => {
 
     const parsedJSON: FromToCountryPointsEntity[] = JSON.parse(JSONString);
 
-    const fromCountryList = parsedJSON.map((entity) => entity.from_country);
-    const toCountryList = parsedJSON.map((entity) => entity.to_country);
+    const pointsMap: Map<string, { jury: number[]; televoters: number[] }> =
+      new Map();
 
-    const uniqueFromCountryList = Array.from(new Set(fromCountryList));
-    const uniqueToCountryList = Array.from(new Set(toCountryList));
+    const fromCountriesSet: Set<string> = new Set();
+    const toCountriesSet: Set<string> = new Set();
 
-    const pointsMapForJury: Map<string, number[]> = new Map();
-    const pointsMapForTelevoters: Map<string, number[]> = new Map();
-
-    const givenPoints = parsedJSON.forEach((entity) => {
-      if (entity.jury_or_televoting === "J") {
-        if (pointsMapForJury.has(entity.to_country)) {
-          pointsMapForJury.set(entity.to_country, [
-            ...pointsMapForJury.get(entity.to_country)!,
-            entity.total_points,
-          ]);
-        } else {
-          pointsMapForJury.set(entity.to_country, [entity.total_points]);
-        }
+    parsedJSON.forEach((entity) => {
+      if (!fromCountriesSet.has(entity.from_country)) {
+        fromCountriesSet.add(entity.from_country);
       }
 
-      if (entity.jury_or_televoting === "T") {
-        if (pointsMapForTelevoters.has(entity.to_country)) {
-          pointsMapForTelevoters.set(entity.to_country, [
-            ...pointsMapForTelevoters.get(entity.to_country)!,
-            entity.total_points,
-          ]);
-        } else {
-          pointsMapForTelevoters.set(entity.to_country, [entity.total_points]);
+      if (!toCountriesSet.has(entity.to_country)) {
+        toCountriesSet.add(entity.to_country);
+      }
+
+      if (pointsMap.has(entity.to_country)) {
+        if (entity.jury_or_televoting === "T") {
+          pointsMap.set(entity.to_country, {
+            televoters: [
+              ...pointsMap.get(entity.to_country)?.televoters!,
+              entity.total_points,
+            ],
+            jury: [...pointsMap.get(entity.to_country)?.jury!],
+          });
+        }
+
+        if (entity.jury_or_televoting === "J") {
+          pointsMap.set(entity.to_country, {
+            jury: [
+              ...pointsMap.get(entity.to_country)?.jury!,
+              entity.total_points,
+            ],
+            televoters: [...pointsMap.get(entity.to_country)?.televoters!],
+          });
+        }
+      } else {
+        if (entity.jury_or_televoting === "J") {
+          pointsMap.set(entity.to_country, {
+            jury: [entity.total_points],
+            televoters: [],
+          });
+        }
+
+        if (entity.jury_or_televoting === "T") {
+          pointsMap.set(entity.to_country, {
+            jury: [],
+            televoters: [entity.total_points],
+          });
         }
       }
     });
 
-    const arrayOfPoints = Array.from(pointsMapForJury, ([name, value]) => ({
+    const arrayOfPoints = Array.from(pointsMap, ([name, value]) => ({
       toCountry: name,
       points: value,
     }));
 
     return {
-      fromCountries: uniqueFromCountryList,
-      toCountries: uniqueToCountryList,
+      fromCountries: Array.from(fromCountriesSet),
+      toCountries: Array.from(toCountriesSet),
       givenPoints: arrayOfPoints,
     };
   };
