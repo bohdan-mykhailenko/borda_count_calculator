@@ -22,7 +22,7 @@ interface VoteResults {
 interface PointsTableProps {
   fromCountries: string[];
   toCountries: string[];
-  givenPoints: {
+  receivedPoints: {
     toCountry: string;
     jury: {
       points: number;
@@ -38,7 +38,7 @@ interface PointsTableProps {
 export const PointsTable: React.FC<PointsTableProps> = ({
   fromCountries,
   toCountries,
-  givenPoints,
+  receivedPoints,
 }) => {
   const [juryVoteResults, setJuryVoteResults] = useState<VoteResults>({
     points: 0,
@@ -95,7 +95,7 @@ export const PointsTable: React.FC<PointsTableProps> = ({
               <Td
                 paddingY={0}
                 paddingX={1}
-                key={fromCountry}
+                key={fromCountry + uuidv4()}
                 fontSize="10px"
                 color="muted"
                 fontWeight={700}
@@ -112,19 +112,19 @@ export const PointsTable: React.FC<PointsTableProps> = ({
 
         <Tbody>
           {toCountries.map((toCountry, index) => {
-            const totalPointsFromJury = givenPoints[index].jury.reduce(
+            const totalPointsFromJury = receivedPoints[index].jury.reduce(
               (sum, value) => (sum += value.points),
               0
             );
 
-            console.log("givenPoints[index]", givenPoints[index]);
-
-            const totalPointsFromTelevoters = givenPoints[
+            const totalPointsFromTelevoters = receivedPoints[
               index
             ].televoters.reduce((sum, value) => (sum += value.points), 0);
 
             const summaryPoints =
               totalPointsFromJury + totalPointsFromTelevoters;
+
+            console.log(" summaryPoints", summaryPoints, toCountry);
 
             if (summaryVoteResults.points < summaryPoints) {
               setSummaryVoteResults({
@@ -153,7 +153,7 @@ export const PointsTable: React.FC<PointsTableProps> = ({
 
             return (
               <>
-                <Tr key={toCountry} background="blue.200">
+                <Tr key={toCountry + uuidv4()} background="blue.200">
                   <Td
                     paddingY={0}
                     paddingX={1}
@@ -178,41 +178,25 @@ export const PointsTable: React.FC<PointsTableProps> = ({
                   </Td>
 
                   {fromCountries.map((fromCountry) => {
-                    const isCountryVoted = givenPoints[index].televoters.find(
-                      (value) => fromCountry === value.fromCountry
-                    )?.points;
+                    const points =
+                      receivedPoints[index].televoters.find(
+                        (value) => fromCountry === value.fromCountry
+                      )?.points || 0;
 
                     return (
                       <Td
                         paddingY={0}
                         paddingX={1}
                         fontSize="10px"
-                        key={uuidv4()}
+                        key={points + uuidv4()}
                       >
-                        {isCountryVoted || "Z"}
+                        {points < 0 ? 0 : points}
                       </Td>
                     );
                   })}
-
-                  {/* {givenPoints[index].televoters.map((value) => {
-                    const isCountryVoted = fromCountries.some(
-                      (fromCountry) => fromCountry === value.fromCountry
-                    );
-
-                    return (
-                      <Td
-                        paddingY={0}
-                        paddingX={1}
-                        fontSize="10px"
-                        key={uuidv4()}
-                      >
-                        {isCountryVoted ? value.points : "ZERO"}
-                      </Td>
-                    );
-                  })} */}
                 </Tr>
 
-                <Tr key={toCountry} background="orange.200">
+                <Tr key={toCountry + uuidv4()} background="orange.200">
                   <Td
                     paddingY={0}
                     paddingX={1}
@@ -235,32 +219,21 @@ export const PointsTable: React.FC<PointsTableProps> = ({
                   </Td>
 
                   {fromCountries.map((fromCountry) => {
-                    const isCountryVoted = givenPoints[index].jury.find(
-                      (value) => fromCountry === value.fromCountry
-                    )?.points;
-
+                    const points =
+                      receivedPoints[index].jury.find(
+                        (value) => fromCountry === value.fromCountry
+                      )?.points || 0;
                     return (
                       <Td
                         paddingY={0}
                         paddingX={1}
                         fontSize="10px"
-                        key={uuidv4()}
+                        key={points + uuidv4()}
                       >
-                        {isCountryVoted || "Z"}
+                        {points < 0 ? 0 : points}
                       </Td>
                     );
                   })}
-
-                  {/* {givenPoints[index].jury.map((value) => (
-                    <Td
-                      paddingY={0}
-                      paddingX={1}
-                      fontSize="10px"
-                      key={uuidv4()}
-                    >
-                      {value.points}
-                    </Td>
-                  ))} */}
                 </Tr>
               </>
             );

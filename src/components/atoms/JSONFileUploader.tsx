@@ -1,11 +1,13 @@
-import { Input } from "@chakra-ui/react";
+import { Box, Flex, FormLabel, Input, Text } from "@chakra-ui/react";
 import React from "react";
 
 interface JSONFileUploaderProps {
   onUploadJSONString: (JSONstringFromFile: string) => void;
+  label: string;
 }
 
 export const JSONFileUploader: React.FC<JSONFileUploaderProps> = ({
+  label,
   onUploadJSONString,
 }) => {
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -22,5 +24,11 @@ export const JSONFileUploader: React.FC<JSONFileUploaderProps> = ({
       };
     }
   };
-  return <Input type="file" accept=".json" onChange={handleChange} />;
+  return (
+    <Flex direction="column" gap={4}>
+      <Text>{label}</Text>
+
+      <Input type="file" accept=".json" onChange={handleChange} />
+    </Flex>
+  );
 };
