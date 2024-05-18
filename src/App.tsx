@@ -1,9 +1,15 @@
 import React from "react";
-import "./App.css";
 import { Box } from "@chakra-ui/react";
 
+import { ToolsPanel } from "./components/organisms";
+
 function App() {
-  return <Box>CHAKRA UI</Box>;
+  return (
+    <Box>
+      CHAKRA UI
+      <ToolsPanel />
+    </Box>
+  );
 }
 
 export default App;
