@@ -9,7 +9,7 @@ interface ToolsPanelProps {}
 interface FromToCountryPointsEntity {
   from_country: string;
   to_country: string;
-  total_points: number;
+  points: number;
   jury_or_televoting: "T" | "J";
 }
 
@@ -21,10 +21,14 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = () => {
     toCountries: string[];
     givenPoints: {
       toCountry: string;
-      points: {
-        jury: number[];
-        televoters: number[];
-      };
+      jury: {
+        points: number;
+        fromCountry: string;
+      }[];
+      televoters: {
+        points: number;
+        fromCountry: string;
+      }[];
     }[];
   } => {
     if (!JSONString) {
@@ -37,8 +41,19 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = () => {
 
     const parsedJSON: FromToCountryPointsEntity[] = JSON.parse(JSONString);
 
-    const pointsMap: Map<string, { jury: number[]; televoters: number[] }> =
-      new Map();
+    const pointsMap: Map<
+      string,
+      {
+        jury: {
+          points: number;
+          fromCountry: string;
+        }[];
+        televoters: {
+          points: number;
+          fromCountry: string;
+        }[];
+      }
+    > = new Map();
 
     const fromCountriesSet: Set<string> = new Set();
     const toCountriesSet: Set<string> = new Set();
@@ -57,7 +72,7 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = () => {
           pointsMap.set(entity.to_country, {
             televoters: [
               ...pointsMap.get(entity.to_country)?.televoters!,
-              entity.total_points,
+              { fromCountry: entity.from_country, points: entity.points },
             ],
             jury: [...pointsMap.get(entity.to_country)?.jury!],
           });
@@ -67,7 +82,7 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = () => {
           pointsMap.set(entity.to_country, {
             jury: [
               ...pointsMap.get(entity.to_country)?.jury!,
-              entity.total_points,
+              { fromCountry: entity.from_country, points: entity.points },
             ],
             televoters: [...pointsMap.get(entity.to_country)?.televoters!],
           });
@@ -75,7 +90,7 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = () => {
       } else {
         if (entity.jury_or_televoting === "J") {
           pointsMap.set(entity.to_country, {
-            jury: [entity.total_points],
+            jury: [{ fromCountry: entity.from_country, points: entity.points }],
             televoters: [],
           });
         }
@@ -83,7 +98,9 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = () => {
         if (entity.jury_or_televoting === "T") {
           pointsMap.set(entity.to_country, {
             jury: [],
-            televoters: [entity.total_points],
+            televoters: [
+              { fromCountry: entity.from_country, points: entity.points },
+            ],
           });
         }
       }
@@ -91,12 +108,21 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = () => {
 
     const arrayOfPoints = Array.from(pointsMap, ([name, value]) => ({
       toCountry: name,
-      points: value,
+      jury: value.jury,
+      televoters: value.televoters,
     }));
 
+    const arrayFromCountries = Array.from(fromCountriesSet).sort(
+      (countryA, countryB) => countryA.localeCompare(countryB)
+    );
+
+    const arrayToCountries = Array.from(toCountriesSet).sort(
+      (countryA, countryB) => countryA.localeCompare(countryB)
+    );
+
     return {
-      fromCountries: Array.from(fromCountriesSet),
-      toCountries: Array.from(toCountriesSet),
+      fromCountries: arrayFromCountries,
+      toCountries: arrayToCountries,
       givenPoints: arrayOfPoints,
     };
   };

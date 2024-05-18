@@ -24,10 +24,14 @@ interface PointsTableProps {
   toCountries: string[];
   givenPoints: {
     toCountry: string;
-    points: {
-      jury: number[];
-      televoters: number[];
-    };
+    jury: {
+      points: number;
+      fromCountry: string;
+    }[];
+    televoters: {
+      points: number;
+      fromCountry: string;
+    }[];
   }[];
 }
 
@@ -81,7 +85,12 @@ export const PointsTable: React.FC<PointsTableProps> = ({
       >
         <Thead>
           <Tr>
-            <Td background="red.200">JURY</Td>
+            <Td width={5} background="red.300">
+              Countries
+            </Td>
+            <Td width={5} background="red.300">
+              Subtotal
+            </Td>
             {fromCountries.map((fromCountry) => (
               <Td
                 paddingY={0}
@@ -93,7 +102,8 @@ export const PointsTable: React.FC<PointsTableProps> = ({
                 textTransform="uppercase"
               >
                 <Tooltip label={fromCountry}>
-                  {fromCountry.slice(0, 2).toUpperCase()}
+                  {find.byCountry(fromCountry)?.iso2 ||
+                    fromCountry.slice(0, 2).toUpperCase()}
                 </Tooltip>
               </Td>
             ))}
@@ -102,14 +112,16 @@ export const PointsTable: React.FC<PointsTableProps> = ({
 
         <Tbody>
           {toCountries.map((toCountry, index) => {
-            const totalPointsFromJury = givenPoints[index].points.jury.reduce(
-              (sum, point) => (sum += point),
+            const totalPointsFromJury = givenPoints[index].jury.reduce(
+              (sum, value) => (sum += value.points),
               0
             );
 
+            console.log("givenPoints[index]", givenPoints[index]);
+
             const totalPointsFromTelevoters = givenPoints[
               index
-            ].points.televoters.reduce((sum, point) => (sum += point), 0);
+            ].televoters.reduce((sum, value) => (sum += value.points), 0);
 
             const summaryPoints =
               totalPointsFromJury + totalPointsFromTelevoters;
@@ -162,19 +174,42 @@ export const PointsTable: React.FC<PointsTableProps> = ({
                     textTransform="uppercase"
                     background="green"
                   >
-                    {totalPointsFromJury}
+                    {totalPointsFromTelevoters}(T)
                   </Td>
 
-                  {givenPoints[index].points.televoters.map((point) => (
-                    <Td
-                      paddingY={0}
-                      paddingX={1}
-                      fontSize="10px"
-                      key={uuidv4()}
-                    >
-                      {point}
-                    </Td>
-                  ))}
+                  {fromCountries.map((fromCountry) => {
+                    const isCountryVoted = givenPoints[index].televoters.find(
+                      (value) => fromCountry === value.fromCountry
+                    )?.points;
+
+                    return (
+                      <Td
+                        paddingY={0}
+                        paddingX={1}
+                        fontSize="10px"
+                        key={uuidv4()}
+                      >
+                        {isCountryVoted || "Z"}
+                      </Td>
+                    );
+                  })}
+
+                  {/* {givenPoints[index].televoters.map((value) => {
+                    const isCountryVoted = fromCountries.some(
+                      (fromCountry) => fromCountry === value.fromCountry
+                    );
+
+                    return (
+                      <Td
+                        paddingY={0}
+                        paddingX={1}
+                        fontSize="10px"
+                        key={uuidv4()}
+                      >
+                        {isCountryVoted ? value.points : "ZERO"}
+                      </Td>
+                    );
+                  })} */}
                 </Tr>
 
                 <Tr key={toCountry} background="orange.200">
@@ -196,19 +231,36 @@ export const PointsTable: React.FC<PointsTableProps> = ({
                     textTransform="uppercase"
                     background="green"
                   >
-                    {totalPointsFromTelevoters}
+                    {totalPointsFromJury}(J)
                   </Td>
 
-                  {givenPoints[index].points.jury.map((point) => (
+                  {fromCountries.map((fromCountry) => {
+                    const isCountryVoted = givenPoints[index].jury.find(
+                      (value) => fromCountry === value.fromCountry
+                    )?.points;
+
+                    return (
+                      <Td
+                        paddingY={0}
+                        paddingX={1}
+                        fontSize="10px"
+                        key={uuidv4()}
+                      >
+                        {isCountryVoted || "Z"}
+                      </Td>
+                    );
+                  })}
+
+                  {/* {givenPoints[index].jury.map((value) => (
                     <Td
                       paddingY={0}
                       paddingX={1}
                       fontSize="10px"
                       key={uuidv4()}
                     >
-                      {point}
+                      {value.points}
                     </Td>
-                  ))}
+                  ))} */}
                 </Tr>
               </>
             );
