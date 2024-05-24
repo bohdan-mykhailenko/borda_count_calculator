@@ -4,11 +4,13 @@ import React from "react";
 
 interface YearSelectMenuProps {
   availableYears: number[];
+  selectedYear: number | null;
   onSelectYear: (year: number) => void;
 }
 
 export const YearSelectMenu: React.FC<YearSelectMenuProps> = ({
   availableYears,
+  selectedYear,
   onSelectYear,
 }) => {
   const isEmptyYearList = availableYears.length === 0;
@@ -16,7 +18,7 @@ export const YearSelectMenu: React.FC<YearSelectMenuProps> = ({
   return (
     <Menu>
       <MenuButton as={Button} rightIcon={<ChevronDownIcon />}>
-        Year
+        {selectedYear || "Year"}
       </MenuButton>
 
       <MenuList>

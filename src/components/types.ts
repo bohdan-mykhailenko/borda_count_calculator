@@ -7,11 +7,24 @@ export interface DetailedVotingEntity {
 }
 
 export interface CoefficientsEntity {
+  id: number;
   from_country: string;
   to_country: string;
-  political_coeff: number;
-  border_coeff: number;
-  language_coeff: number;
+  political: number;
+  border: number;
+  language: number;
+}
+
+export interface CoefficientValue {
+  coeff_value: number;
+  jury: number;
+  televoting: number;
+}
+
+export interface CoefficientsValuesEntity {
+  language: CoefficientValue;
+  border: CoefficientValue;
+  political: CoefficientValue;
 }
 
 export interface ReceivePoints {
@@ -30,4 +43,9 @@ export interface ShortVotingEntity {
   fromCountries: string[];
   toCountries: string[];
   receivedPoints: ReceivePoints[];
+}
+
+export interface VoteResults {
+  points: number;
+  country: string;
 }

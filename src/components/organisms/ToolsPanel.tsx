@@ -1,9 +1,13 @@
-import { Box } from "@chakra-ui/react";
+import { Box, Button, Flex } from "@chakra-ui/react";
 import React, { useEffect, useMemo, useState } from "react";
 
-import { JSONFileUploader, YearSelectMenu } from "../atoms";
+import {
+  CoefficientCheckbox,
+  JSONFileUploader,
+  YearSelectMenu,
+} from "../atoms";
 import { PointsTable } from "../molecules";
-import { convertJSONCoefficientsData, convertJSONPointsData } from "../helpers";
+import { convertJSONPointsData } from "../helpers";
 import { DetailedVotingEntity, ShortVotingEntity } from "../types";
 
 interface ToolsPanelProps {}
@@ -13,40 +17,57 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = () => {
   const [JSONCoefficientsString, setJSONCoefficientsString] = useState<
     string | null
   >(null);
+  const [JSONCoefficientsValuesString, setJSONCoefficientsValuesString] =
+    useState<string | null>(null);
 
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [votingData, setVotingData] = useState<ShortVotingEntity | null>(null);
   const [availableYears, setAvailableYears] = useState<number[]>([]);
+  const [isCalculateWithCoefficients, setIsCalculateWithCoefficients] =
+    useState<boolean>(false);
+  const [isCalculatingData, setIsCalculatingData] = useState<boolean>(false);
 
-  const arrayOfCoeffs = useMemo(
-    () => convertJSONCoefficientsData(JSONCoefficientsString),
-    [JSONCoefficientsString]
-  );
-
-  const onUploadJSONPointsString = (JSONStringFromFile: string) => {
+  const uploadJSONPointsString = (JSONStringFromFile: string) => {
     setJSONPointsString(JSONStringFromFile);
   };
 
-  const onUploadJSONCoefficientsString = (JSONStringFromFile: string) => {
+  const uploadJSONCoefficientsString = (JSONStringFromFile: string) => {
     setJSONCoefficientsString(JSONStringFromFile);
+  };
+
+  const uploadJSONCoefficientsValuesString = (JSONStringFromFile: string) => {
+    setJSONCoefficientsValuesString(JSONStringFromFile);
   };
 
   const selectYear = (year: number) => {
     setSelectedYear(year);
   };
 
-  useEffect(() => {
-    if (selectedYear) {
-      const { receivedPoints, toCountries, fromCountries } =
-        convertJSONPointsData(
-          JSONPointsString,
-          JSONCoefficientsString,
-          selectedYear
-        );
+  const toggleCalculateWithCoefficients = (isChecked: boolean) => {
+    setIsCalculateWithCoefficients(isChecked);
+  };
 
-      setVotingData({ receivedPoints, toCountries, fromCountries });
+  const handleCalculation = async () => {
+    if (selectedYear && JSONPointsString) {
+      try {
+        setIsCalculatingData(true);
+
+        const { receivedPoints, toCountries, fromCountries } =
+          await convertJSONPointsData(
+            JSONPointsString,
+            isCalculateWithCoefficients ? JSONCoefficientsString : null,
+            isCalculateWithCoefficients ? JSONCoefficientsValuesString : null,
+            selectedYear
+          );
+
+        setVotingData({ receivedPoints, toCountries, fromCountries });
+      } catch (error) {
+        console.error("error", error);
+      } finally {
+        setIsCalculatingData(false);
+      }
     }
-  }, [selectedYear]);
+  };
 
   useEffect(() => {
     if (JSONPointsString) {
@@ -60,30 +81,64 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = () => {
     }
   }, [JSONPointsString]);
 
+  useEffect(() => {
+    console.log("iSLOADING", isCalculatingData);
+  }, [isCalculatingData]);
+
   return (
-    <Box>
-      <YearSelectMenu
-        availableYears={availableYears}
-        onSelectYear={selectYear}
-      />
+    <Flex direction="column" gap={4}>
+      <Flex gap={4}>
+        <YearSelectMenu
+          availableYears={availableYears}
+          onSelectYear={selectYear}
+          selectedYear={selectedYear}
+        />
 
-      <JSONFileUploader
-        label="Points"
-        onUploadJSONString={onUploadJSONPointsString}
-      />
+        <CoefficientCheckbox
+          isDisabled={
+            !convertJSONPointsData ||
+            !JSONCoefficientsString ||
+            !JSONCoefficientsValuesString
+          }
+          isChecked={isCalculateWithCoefficients}
+          onChangeCooefficientsUsage={toggleCalculateWithCoefficients}
+        />
+      </Flex>
 
-      <JSONFileUploader
-        label="Coefficients"
-        onUploadJSONString={onUploadJSONCoefficientsString}
-      />
+      <Flex gap={4}>
+        <JSONFileUploader
+          label="Points"
+          onUploadJSONString={uploadJSONPointsString}
+        />
 
-      {votingData && (
+        <JSONFileUploader
+          label="Coefficients Beetwen Countries"
+          onUploadJSONString={uploadJSONCoefficientsString}
+        />
+
+        <JSONFileUploader
+          label="Coefficient voting impact"
+          onUploadJSONString={uploadJSONCoefficientsValuesString}
+        />
+      </Flex>
+
+      <Button
+        width={20}
+        colorScheme="teal"
+        size="sm"
+        isDisabled={!selectYear || !JSONPointsString}
+        onClick={handleCalculation}
+      >
+        Calculate
+      </Button>
+
+      {votingData && !isCalculatingData && (
         <PointsTable
           toCountries={votingData.toCountries}
           fromCountries={votingData.fromCountries}
           receivedPoints={votingData.receivedPoints}
         />
       )}
-    </Box>
+    </Flex>
   );
 };

@@ -1,5 +1,6 @@
 import {
   Box,
+  Button,
   Flex,
   Heading,
   Table,
@@ -10,36 +11,22 @@ import {
   Tooltip,
   Tr,
 } from "@chakra-ui/react";
-import React, { useState } from "react";
+import React, { Fragment, useMemo, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import find from "country-code-lookup";
 
-interface VoteResults {
-  points: number;
-  country: string;
-}
+import { ShortVotingEntity, VoteResults } from "../types";
 
-interface PointsTableProps {
-  fromCountries: string[];
-  toCountries: string[];
-  receivedPoints: {
-    toCountry: string;
-    jury: {
-      points: number;
-      fromCountry: string;
-    }[];
-    televoters: {
-      points: number;
-      fromCountry: string;
-    }[];
-  }[];
-}
+interface PointsTableProps extends ShortVotingEntity {}
+
+const summaryArray: VoteResults[] = [];
 
 export const PointsTable: React.FC<PointsTableProps> = ({
   fromCountries,
   toCountries,
   receivedPoints,
 }) => {
+  const [isSortedResult, setIsSortedResult] = useState<boolean>(false);
   const [juryVoteResults, setJuryVoteResults] = useState<VoteResults>({
     points: 0,
     country: "",
@@ -49,30 +36,67 @@ export const PointsTable: React.FC<PointsTableProps> = ({
       points: 0,
       country: "",
     });
-  const [summaryVoteResults, setSummaryVoteResults] = useState<VoteResults>({
+  const [winnerVoteResults, setWinnerVoteResults] = useState<VoteResults>({
     points: 0,
     country: "",
   });
+  const [summaryVoteResults, setSummaryVoteResults] = useState<VoteResults[]>(
+    []
+  );
+
+  const handleSortingResult = () => {
+    setIsSortedResult(!isSortedResult);
+  };
+
+  const sortedToCountries: string[] = useMemo(() => {
+    if (!isSortedResult) {
+      return toCountries;
+    }
+
+    console.log("Sorting", summaryArray);
+
+    const sortedCountries = summaryArray
+      .sort((resultA, resultB) => resultA.points - resultB.points)
+      .map((result) => result.country);
+    console.log("sortedCountries", sortedCountries);
+
+    return sortedCountries;
+  }, [isSortedResult]);
 
   //todo
-  //review length of points - fill with 0
-  //how to calculate with koeff
+  //sorting
+  //здати звіт
 
   return (
     <>
-      <Flex direction="column" gap={2}>
-        <Heading variant="h2">Winner</Heading>
-        <Text>Points: {summaryVoteResults.points}</Text>
-        <Text>Country: {summaryVoteResults.country}</Text>
+      <Flex gap={8}>
+        <Box>
+          <Heading variant="h2">Winner</Heading>
+          <Text>Points: {winnerVoteResults.points || "..."}</Text>
+          <Text>Country: {winnerVoteResults.country || "..."}</Text>
+        </Box>
 
-        <Heading variant="h2">Televoters</Heading>
-        <Text>Points: {televotersVoteResults.points}</Text>
-        <Text>Country: {televotersVoteResults.country}</Text>
+        <Box>
+          <Heading variant="h2">Televoters</Heading>
+          <Text>Points: {televotersVoteResults.points}</Text>
+          <Text>Country: {televotersVoteResults.country}</Text>
+        </Box>
 
-        <Heading variant="h2">Jury</Heading>
-        <Text>Points: {juryVoteResults.points}</Text>
-        <Text>Country: {juryVoteResults.country}</Text>
+        <Box>
+          <Heading variant="h2">Jury</Heading>
+          <Text>Points: {juryVoteResults.points}</Text>
+          <Text>Country: {juryVoteResults.country}</Text>
+        </Box>
       </Flex>
+
+      <Button
+        width={20}
+        colorScheme="teal"
+        size="sm"
+        onClick={handleSortingResult}
+      >
+        Sort
+      </Button>
 
       <Table
         colorScheme="main"
@@ -111,7 +135,7 @@ export const PointsTable: React.FC<PointsTableProps> = ({
         </Thead>
 
         <Tbody>
-          {toCountries.map((toCountry, index) => {
+          {sortedToCountries.map((toCountry, index) => {
             const totalPointsFromJury = receivedPoints[index].jury.reduce(
               (sum, value) => (sum += value.points),
               0
@@ -124,14 +148,25 @@ export const PointsTable: React.FC<PointsTableProps> = ({
             const summaryPoints =
               totalPointsFromJury + totalPointsFromTelevoters;
 
-            console.log(" summaryPoints", summaryPoints, toCountry);
-
-            if (summaryVoteResults.points < summaryPoints) {
-              setSummaryVoteResults({
+            if (winnerVoteResults.points < summaryPoints) {
+              setWinnerVoteResults({
                 points: summaryPoints,
                 country: toCountry,
               });
             }
+
+            summaryArray.push({
+              points: summaryPoints,
+              country: toCountry,
+            });
+
+            // setSummaryVoteResults((prev) => [
+            //   ...prev,
+            //   {
+            //     points: summaryPoints,
+            //     country: toCountry,
+            //   },
+            // ]);
 
             if (juryVoteResults.points < totalPointsFromJury) {
               setJuryVoteResults({
@@ -152,8 +187,8 @@ export const PointsTable: React.FC<PointsTableProps> = ({
               toCountry.slice(0, 2).toUpperCase();
 
             return (
-              <>
-                <Tr key={toCountry + uuidv4()} background="blue.200">
+              <Fragment key={toCountry + uuidv4()}>
+                <Tr background="blue.200">
                   <Td
                     paddingY={0}
                     paddingX={1}
@@ -190,13 +225,13 @@ export const PointsTable: React.FC<PointsTableProps> = ({
                         fontSize="10px"
                         key={points + uuidv4()}
                       >
-                        {points < 0 ? 0 : points}
+                        {points}
                       </Td>
                     );
                   })}
                 </Tr>
 
-                <Tr key={toCountry + uuidv4()} background="orange.200">
+                <Tr background="orange.200">
                   <Td
                     paddingY={0}
                     paddingX={1}
@@ -230,12 +265,12 @@ export const PointsTable: React.FC<PointsTableProps> = ({
                         fontSize="10px"
                         key={points + uuidv4()}
                       >
-                        {points < 0 ? 0 : points}
+                        {points}
                       </Td>
                     );
                   })}
                 </Tr>
-              </>
+              </Fragment>
             );
           })}
         </Tbody>

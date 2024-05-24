@@ -1,26 +1,21 @@
 import {
   CoefficientsEntity,
+  CoefficientsValuesEntity,
   DetailedVotingEntity,
   ShortVotingEntity,
 } from "./types";
 
-export const convertJSONPointsData = (
-  JSONString: string | null,
+export const convertJSONPointsData = async (
+  JSONString: string,
   JSONCoefficientsString: string | null,
+  JSONCoefficientsValuesString: string | null,
   selectedYear: number
-): ShortVotingEntity => {
-  if (!JSONString) {
-    return {
-      fromCountries: [],
-      toCountries: [],
-      receivedPoints: [],
-    };
-  }
-
-  const parsedJSON: DetailedVotingEntity[] = JSON.parse(JSONString);
-
-  const parsedJSONCoefficients: CoefficientsEntity[] =
+): Promise<ShortVotingEntity> => {
+  const pointsBeetwenCountries: DetailedVotingEntity[] = JSON.parse(JSONString);
+  const coefficientsBeetwenCountries: CoefficientsEntity[] =
     JSONCoefficientsString && JSON.parse(JSONCoefficientsString);
+  const coefficientsValues: CoefficientsValuesEntity =
+    JSONCoefficientsValuesString && JSON.parse(JSONCoefficientsValuesString);
 
   const pointsMap: Map<
     string,
@@ -39,60 +34,54 @@ export const convertJSONPointsData = (
   const fromCountriesSet: Set<string> = new Set();
   const toCountriesSet: Set<string> = new Set();
 
-  parsedJSON
+  pointsBeetwenCountries
     .filter((entity) => entity.year === selectedYear)
     .forEach((entity) => {
-      const coeffEntityForCountry = parsedJSONCoefficients
-        ? parsedJSONCoefficients.find(
-            (coeffEntity) =>
-              coeffEntity.to_country === entity.to_country &&
-              coeffEntity.from_country === entity.from_country
+      const coeffEntityForCountry = coefficientsBeetwenCountries
+        ? coefficientsBeetwenCountries.find(
+            (coefficientEntity) =>
+              coefficientEntity.to_country === entity.to_country &&
+              coefficientEntity.from_country === entity.from_country
           ) || {
             from_country: "",
             to_country: "",
-            political_coeff: 0,
-            border_coeff: 0,
-            language_coeff: 0,
+            political: 0,
+            border: 0,
+            language: 0,
           }
         : null;
 
-      const coeffs = {
-        jury: {
-          language: 4.230046735863549,
-          border: 1.082794838107529,
-          politic: 2.0019590472859456,
-        },
-        televoters: {
-          language: 2.0868502409278986,
-          border: 3.6704771583794487,
-          politic: 1.1788231848120212,
-        },
-      };
+      const coeffSummary =
+        coeffEntityForCountry && coefficientsValues
+          ? {
+              jury:
+                coeffEntityForCountry.language *
+                  coefficientsValues.language.jury +
+                coeffEntityForCountry.border * coefficientsValues.border.jury +
+                coeffEntityForCountry.political *
+                  coefficientsValues.political.jury,
 
-      const coeffSummary = coeffEntityForCountry
-        ? {
-            jury:
-              coeffEntityForCountry.language_coeff * coeffs.jury.language +
-              coeffEntityForCountry.border_coeff * coeffs.jury.border +
-              coeffEntityForCountry.political_coeff * coeffs.jury.politic,
+              televoting:
+                coeffEntityForCountry.language *
+                  coefficientsValues.language.televoting +
+                coeffEntityForCountry.border *
+                  coefficientsValues.border.televoting +
+                coeffEntityForCountry.political *
+                  coefficientsValues.political.televoting,
+            }
+          : null;
 
-            televoters:
-              coeffEntityForCountry.language_coeff *
-                coeffs.televoters.language +
-              coeffEntityForCountry.border_coeff * coeffs.televoters.border +
-              coeffEntityForCountry.political_coeff * coeffs.televoters.politic,
-          }
-        : null;
+      const adjustedPointsJury = formatNegativeValue(
+        Math.round(
+          coeffSummary ? entity.points - coeffSummary.jury : entity.points
+        )
+      );
+      const adjustedPointsTelevoters = formatNegativeValue(
+        Math.round(
+          coeffSummary ? entity.points - coeffSummary.televoting : entity.points
+        )
+      );
 
-      const adjustedPointsJury = coeffSummary
-        ? entity.points - coeffSummary.jury
-        : entity.points;
-      const adjustedPointsTelevoters = coeffSummary
-        ? entity.points - coeffSummary.televoters
-        : entity.points;
-
-      //todo
-      //coeffs are optional
       if (!fromCountriesSet.has(entity.from_country)) {
         fromCountriesSet.add(entity.from_country);
       }
@@ -119,7 +108,10 @@ export const convertJSONPointsData = (
           pointsMap.set(entity.to_country, {
             jury: [
               ...pointsMap.get(entity.to_country)?.jury!,
-              { fromCountry: entity.from_country, points: adjustedPointsJury },
+              {
+                fromCountry: entity.from_country,
+                points: adjustedPointsJury,
+              },
             ],
             televoters: [...pointsMap.get(entity.to_country)?.televoters!],
           });
@@ -154,12 +146,14 @@ export const convertJSONPointsData = (
     televoters: value.televoters,
   }));
 
-  const arrayFromCountries = Array.from(fromCountriesSet);
-  // .sort(
-  //   (countryA, countryB) => countryA.localeCompare(countryB)
-  // );
+  const arrayFromCountries = Array.from(fromCountriesSet).sort(
+    (countryA, countryB) => countryA.localeCompare(countryB)
+  );
 
-  const arrayToCountries = Array.from(toCountriesSet);
+  const arrayToCountries = Array.from(toCountriesSet).sort(
+    (countryA, countryB) => countryA.localeCompare(countryB)
+  );
+
   return {
     fromCountries: arrayFromCountries,
     toCountries: arrayToCountries,
@@ -167,16 +161,6 @@ export const convertJSONPointsData = (
   };
 };
 
-export const convertJSONCoefficientsData = (JSONString: string | null): any => {
-  if (!JSONString) {
-    return {
-      fromCountries: [],
-      toCountries: [],
-      receivedPoints: [],
-    };
-  }
-
-  const parsedJSON: CoefficientsEntity[] = JSON.parse(JSONString);
-
-  return parsedJSON;
+export const formatNegativeValue = (value: number) => {
+  return value < 0 ? 0 : value;
 };
