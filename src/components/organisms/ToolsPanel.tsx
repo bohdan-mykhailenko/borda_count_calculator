@@ -1,9 +1,10 @@
 import { Box } from "@chakra-ui/react";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
-import { JSONFileUploader } from "../atoms";
+import { JSONFileUploader, YearSelectMenu } from "../atoms";
 import { PointsTable } from "../molecules";
 import { convertJSONCoefficientsData, convertJSONPointsData } from "../helpers";
+import { DetailedVotingEntity, ShortVotingEntity } from "../types";
 
 interface ToolsPanelProps {}
 
@@ -13,10 +14,9 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = () => {
     string | null
   >(null);
 
-  const { receivedPoints, toCountries, fromCountries } = useMemo(
-    () => convertJSONPointsData(JSONPointsString, JSONCoefficientsString),
-    [JSONPointsString, JSONCoefficientsString]
-  );
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [votingData, setVotingData] = useState<ShortVotingEntity | null>(null);
+  const [availableYears, setAvailableYears] = useState<number[]>([]);
 
   const arrayOfCoeffs = useMemo(
     () => convertJSONCoefficientsData(JSONCoefficientsString),
@@ -31,8 +31,42 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = () => {
     setJSONCoefficientsString(JSONStringFromFile);
   };
 
+  const selectYear = (year: number) => {
+    setSelectedYear(year);
+  };
+
+  useEffect(() => {
+    if (selectedYear) {
+      const { receivedPoints, toCountries, fromCountries } =
+        convertJSONPointsData(
+          JSONPointsString,
+          JSONCoefficientsString,
+          selectedYear
+        );
+
+      setVotingData({ receivedPoints, toCountries, fromCountries });
+    }
+  }, [selectedYear]);
+
+  useEffect(() => {
+    if (JSONPointsString) {
+      const yearsFromFile: number[] = JSON.parse(JSONPointsString).map(
+        (entity: DetailedVotingEntity) => entity.year
+      );
+
+      const uniqueYears = Array.from(new Set(yearsFromFile)).sort();
+
+      setAvailableYears(uniqueYears);
+    }
+  }, [JSONPointsString]);
+
   return (
     <Box>
+      <YearSelectMenu
+        availableYears={availableYears}
+        onSelectYear={selectYear}
+      />
+
       <JSONFileUploader
         label="Points"
         onUploadJSONString={onUploadJSONPointsString}
@@ -43,11 +77,11 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = () => {
         onUploadJSONString={onUploadJSONCoefficientsString}
       />
 
-      {JSONPointsString && (
+      {votingData && (
         <PointsTable
-          toCountries={toCountries}
-          fromCountries={fromCountries}
-          receivedPoints={receivedPoints}
+          toCountries={votingData.toCountries}
+          fromCountries={votingData.fromCountries}
+          receivedPoints={votingData.receivedPoints}
         />
       )}
     </Box>
