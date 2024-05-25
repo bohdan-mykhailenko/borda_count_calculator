@@ -1,5 +1,5 @@
-import { Box, Button, Flex } from "@chakra-ui/react";
-import React, { useEffect, useMemo, useState } from "react";
+import { Button, Flex } from "@chakra-ui/react";
+import React, { useEffect, useState } from "react";
 
 import {
   CoefficientCheckbox,
@@ -10,9 +10,7 @@ import { PointsTable } from "../molecules";
 import { convertJSONPointsData } from "../helpers";
 import { DetailedVotingEntity, ShortVotingEntity } from "../types";
 
-interface ToolsPanelProps {}
-
-export const ToolsPanel: React.FC<ToolsPanelProps> = () => {
+export const MainPage: React.FC = () => {
   const [JSONPointsString, setJSONPointsString] = useState<string | null>(null);
   const [JSONCoefficientsString, setJSONCoefficientsString] = useState<
     string | null

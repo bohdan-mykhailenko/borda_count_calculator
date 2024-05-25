@@ -1,7 +1,7 @@
-import { ToolsPanel } from "./components/organisms";
+import { MainPage } from "./components/pages";
 
 function App() {
-  return <ToolsPanel />;
+  return <MainPage />;
 }
 
 export default App;

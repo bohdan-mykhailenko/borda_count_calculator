@@ -14,7 +14,7 @@ import { v4 as uuidv4 } from "uuid";
 import find from "country-code-lookup";
 
 import { Order, ShortVotingEntity, VoteResults } from "../types";
-import { getColorForPoints } from "./utils";
+import { getColorForPoints } from "../molecules/utils";
 import { PointsSummary } from "../atoms";
 
 interface PointsTableProps extends ShortVotingEntity {}

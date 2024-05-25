@@ -1,1 +1,1 @@
-export * from "./PointsTable";
+export * from "../organisms/PointsTable";
