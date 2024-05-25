@@ -1,9 +1,7 @@
 "use client";
 
 import { PropsWithChildren } from "react";
-import { ChakraProvider as BaseChakraProvider } from "@chakra-ui/react";
-
-import { theme } from "../../theme";
+import { ChakraProvider as BaseChakraProvider, theme } from "@chakra-ui/react";
 
 export const ChakraProvider = ({ children }: PropsWithChildren) => {
   return (

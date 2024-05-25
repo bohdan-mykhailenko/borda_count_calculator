@@ -49,3 +49,8 @@ export interface VoteResults {
   points: number;
   country: string;
 }
+
+export enum Order {
+  ASC = "asc",
+  DESC = "desc",
+}

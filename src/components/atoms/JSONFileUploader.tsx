@@ -25,10 +25,12 @@ export const JSONFileUploader: React.FC<JSONFileUploaderProps> = ({
     }
   };
   return (
-    <Flex direction="column" gap={4}>
-      <Text>{label}</Text>
+    <Flex direction="column" gap={2}>
+      <Text fontWeight={500} fontSize="sm">
+        {label}
+      </Text>
 
-      <Input type="file" accept=".json" onChange={handleChange} />
+      <Input size="xs" type="file" accept=".json" onChange={handleChange} />
     </Flex>
   );
 };

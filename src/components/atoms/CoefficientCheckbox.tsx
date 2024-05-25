@@ -21,8 +21,8 @@ export const CoefficientCheckbox: React.FC<CoefficientCheckboxProps> = ({
   };
 
   return (
-    <Flex direction="column" gap={2}>
-      <Text>Calculate with coefficients</Text>
+    <Flex gap={2} alignItems="center">
+      <Text>With coefficients:</Text>
 
       <Checkbox
         isDisabled={isDisabled}

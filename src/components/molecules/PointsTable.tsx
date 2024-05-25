@@ -1,8 +1,6 @@
 import {
-  Box,
   Button,
   Flex,
-  Heading,
   Table,
   Tbody,
   Td,
@@ -15,18 +13,18 @@ import React, { Fragment, useMemo, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import find from "country-code-lookup";
 
-import { ShortVotingEntity, VoteResults } from "../types";
+import { Order, ShortVotingEntity, VoteResults } from "../types";
+import { getColorForPoints } from "./utils";
+import { PointsSummary } from "../atoms";
 
 interface PointsTableProps extends ShortVotingEntity {}
-
-const summaryArray: VoteResults[] = [];
 
 export const PointsTable: React.FC<PointsTableProps> = ({
   fromCountries,
   toCountries,
   receivedPoints,
 }) => {
-  const [isSortedResult, setIsSortedResult] = useState<boolean>(false);
+  const [ordering, setOrdering] = useState<Order | null>(null);
   const [juryVoteResults, setJuryVoteResults] = useState<VoteResults>({
     points: 0,
     country: "",
@@ -40,79 +38,135 @@ export const PointsTable: React.FC<PointsTableProps> = ({
     points: 0,
     country: "",
   });
-  const [summaryVoteResults, setSummaryVoteResults] = useState<VoteResults[]>(
-    []
-  );
 
-  const handleSortingResult = () => {
-    setIsSortedResult(!isSortedResult);
+  const handleSortingResult = (newOrdering: Order) => {
+    setOrdering(newOrdering);
   };
 
-  const sortedToCountries: string[] = useMemo(() => {
-    if (!isSortedResult) {
-      return toCountries;
+  const preparedToCountries = useMemo(() => {
+    return toCountries.map((toCountry) => {
+      const receivedPointsEntity = receivedPoints.find(
+        (entity) => entity.toCountry === toCountry
+      );
+
+      if (!receivedPointsEntity) {
+        return {
+          toCountry: "",
+          totalPointsFromJury: 0,
+          totalPointsFromTelevoters: 0,
+          summaryPoints: 0,
+          countryCode: "",
+        };
+      }
+
+      const totalPointsFromJury = receivedPointsEntity.jury.reduce(
+        (sum, value) => (sum += value.points),
+        0
+      );
+
+      const totalPointsFromTelevoters = receivedPointsEntity.televoters.reduce(
+        (sum, value) => (sum += value.points),
+        0
+      );
+
+      const summaryPoints = totalPointsFromJury + totalPointsFromTelevoters;
+
+      const countryCode =
+        find.byCountry(toCountry)?.iso2 || toCountry.slice(0, 2).toUpperCase();
+
+      return {
+        toCountry,
+        totalPointsFromJury,
+        totalPointsFromTelevoters,
+        summaryPoints,
+        countryCode,
+      };
+    });
+  }, [toCountries]);
+
+  const sortedToCountries = useMemo(() => {
+    if (ordering === Order.ASC) {
+      return preparedToCountries.sort(
+        (resultA, resultB) => resultA.summaryPoints - resultB.summaryPoints
+      );
     }
 
-    console.log("Sorting", summaryArray);
+    if (ordering === Order.DESC) {
+      return preparedToCountries.sort(
+        (resultA, resultB) => resultB.summaryPoints - resultA.summaryPoints
+      );
+    }
 
-    const sortedCountries = summaryArray
-      .sort((resultA, resultB) => resultA.points - resultB.points)
-      .map((result) => result.country);
-    console.log("sortedCountries", sortedCountries);
-
-    return sortedCountries;
-  }, [isSortedResult]);
-
-  //todo
-  //sorting
-  //здати звіт
+    return preparedToCountries;
+  }, [ordering]);
 
   return (
-    <>
-      <Flex gap={8}>
-        <Box>
-          <Heading variant="h2">Winner</Heading>
-          <Text>Points: {winnerVoteResults.points || "..."}</Text>
-          <Text>Country: {winnerVoteResults.country || "..."}</Text>
-        </Box>
-
-        <Box>
-          <Heading variant="h2">Televoters</Heading>
-          <Text>Points: {televotersVoteResults.points}</Text>
-          <Text>Country: {televotersVoteResults.country}</Text>
-        </Box>
-
-        <Box>
-          <Heading variant="h2">Jury</Heading>
-          <Text>Points: {juryVoteResults.points}</Text>
-          <Text>Country: {juryVoteResults.country}</Text>
-        </Box>
+    <Flex direction="column" gap={2}>
+      <Flex
+        gap={8}
+        borderBottom="3px solid"
+        borderColor="teal.800"
+        paddingBottom={2}
+      >
+        <PointsSummary label="Winner" results={winnerVoteResults} isWinner />
+        <PointsSummary label="Jury" results={televotersVoteResults} />
+        <PointsSummary label="Televoters" results={juryVoteResults} />
       </Flex>
 
-      <Button
-        width={20}
-        colorScheme="teal"
-        size="sm"
-        onClick={handleSortingResult}
-      >
-        Sort
-      </Button>
+      <Flex width="fit-content" direction="column" gap={1} paddingY={2}>
+        <Text>Sorting:</Text>
+
+        <Flex gap={4}>
+          <Button
+            width={16}
+            colorScheme="teal"
+            size="xs"
+            onClick={() => handleSortingResult(Order.ASC)}
+          >
+            ASC
+          </Button>
+
+          <Button
+            width={16}
+            colorScheme="teal"
+            size="xs"
+            onClick={() => handleSortingResult(Order.DESC)}
+          >
+            DESC
+          </Button>
+        </Flex>
+      </Flex>
 
       <Table
-        colorScheme="main"
+        colorScheme="facebook"
         variant="main"
         bgcolor="white"
         fontSize="xs"
         size="md"
-        color="muted"
+        color="black"
         fontWeight="semibold"
       >
         <Thead>
           <Tr>
-            <Td width={5} background="red.300">
-              Countries
+            <Td
+              textAlign="center"
+              paddingX={0}
+              paddingY={2}
+              width={5}
+              background="purple.500"
+              color="black"
+            >
+              Country
             </Td>
-            <Td width={5} background="red.300">
+
+            <Td
+              paddingX={0}
+              paddingLeft={2}
+              paddingY={2}
+              width={5}
+              background="purple.400"
+              color="black"
+            >
               Subtotal
             </Td>
             {fromCountries.map((fromCountry) => (
@@ -121,9 +175,10 @@ export const PointsTable: React.FC<PointsTableProps> = ({
                 paddingX={1}
                 key={fromCountry + uuidv4()}
                 fontSize="10px"
-                color="muted"
+                color="black"
                 fontWeight={700}
                 textTransform="uppercase"
+                background="purple.200"
               >
                 <Tooltip label={fromCountry}>
                   {find.byCountry(fromCountry)?.iso2 ||
@@ -135,81 +190,59 @@ export const PointsTable: React.FC<PointsTableProps> = ({
         </Thead>
 
         <Tbody>
-          {sortedToCountries.map((toCountry, index) => {
-            const totalPointsFromJury = receivedPoints[index].jury.reduce(
-              (sum, value) => (sum += value.points),
-              0
-            );
-
-            const totalPointsFromTelevoters = receivedPoints[
-              index
-            ].televoters.reduce((sum, value) => (sum += value.points), 0);
-
-            const summaryPoints =
-              totalPointsFromJury + totalPointsFromTelevoters;
-
-            if (winnerVoteResults.points < summaryPoints) {
+          {sortedToCountries.map((toCountryItem, index) => {
+            if (winnerVoteResults.points < toCountryItem.summaryPoints) {
               setWinnerVoteResults({
-                points: summaryPoints,
-                country: toCountry,
+                points: toCountryItem.summaryPoints,
+                country: toCountryItem.toCountry,
               });
             }
 
-            summaryArray.push({
-              points: summaryPoints,
-              country: toCountry,
-            });
-
-            // setSummaryVoteResults((prev) => [
-            //   ...prev,
-            //   {
-            //     points: summaryPoints,
-            //     country: toCountry,
-            //   },
-            // ]);
-
-            if (juryVoteResults.points < totalPointsFromJury) {
+            if (juryVoteResults.points < toCountryItem.totalPointsFromJury) {
               setJuryVoteResults({
-                points: totalPointsFromJury,
-                country: toCountry,
+                points: toCountryItem.totalPointsFromJury,
+                country: toCountryItem.toCountry,
               });
             }
 
-            if (televotersVoteResults.points < totalPointsFromTelevoters) {
+            if (
+              televotersVoteResults.points <
+              toCountryItem.totalPointsFromTelevoters
+            ) {
               setTelevotersVoteResults({
-                points: totalPointsFromTelevoters,
-                country: toCountry,
+                points: toCountryItem.totalPointsFromTelevoters,
+                country: toCountryItem.toCountry,
               });
             }
-
-            const countryCode =
-              find.byCountry(toCountry)?.iso2 ||
-              toCountry.slice(0, 2).toUpperCase();
 
             return (
-              <Fragment key={toCountry + uuidv4()}>
-                <Tr background="blue.200">
+              <Fragment key={toCountryItem.toCountry + uuidv4()}>
+                <Tr background="gray.200">
                   <Td
-                    paddingY={0}
-                    paddingX={1}
-                    fontSize="10px"
-                    color="muted"
+                    textAlign="center"
+                    padding={0}
+                    fontSize={10}
+                    color="black"
                     fontWeight={700}
                     textTransform="uppercase"
                   >
-                    <Tooltip label={toCountry}>{countryCode}</Tooltip>
+                    <Tooltip label={toCountryItem.toCountry}>
+                      {toCountryItem.countryCode}
+                    </Tooltip>
                   </Td>
 
                   <Td
                     paddingY={0}
-                    paddingX={1}
+                    paddingX={2}
                     fontSize="sm"
-                    color="white"
                     fontWeight={700}
                     textTransform="uppercase"
-                    background="green"
+                    color="black"
+                    background={getColorForPoints(
+                      toCountryItem.totalPointsFromTelevoters
+                    )}
                   >
-                    {totalPointsFromTelevoters}(T)
+                    {toCountryItem.totalPointsFromTelevoters}
                   </Td>
 
                   {fromCountries.map((fromCountry) => {
@@ -220,6 +253,7 @@ export const PointsTable: React.FC<PointsTableProps> = ({
 
                     return (
                       <Td
+                        width={6}
                         paddingY={0}
                         paddingX={1}
                         fontSize="10px"
@@ -231,26 +265,21 @@ export const PointsTable: React.FC<PointsTableProps> = ({
                   })}
                 </Tr>
 
-                <Tr background="orange.200">
-                  <Td
-                    paddingY={0}
-                    paddingX={1}
-                    fontSize="10px"
-                    color="muted"
-                    fontWeight={700}
-                    textTransform="uppercase"
-                  />
+                <Tr background="white">
+                  <Td padding={0} />
 
                   <Td
                     paddingY={0}
-                    paddingX={1}
+                    paddingX={2}
                     fontSize="sm"
-                    color="white"
                     fontWeight={700}
                     textTransform="uppercase"
-                    background="green"
+                    color="black"
+                    background={getColorForPoints(
+                      toCountryItem.totalPointsFromJury
+                    )}
                   >
-                    {totalPointsFromJury}(J)
+                    {toCountryItem.totalPointsFromJury}
                   </Td>
 
                   {fromCountries.map((fromCountry) => {
@@ -275,6 +304,6 @@ export const PointsTable: React.FC<PointsTableProps> = ({
           })}
         </Tbody>
       </Table>
-    </>
+    </Flex>
   );
 };

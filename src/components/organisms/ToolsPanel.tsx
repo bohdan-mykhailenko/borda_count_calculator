@@ -86,8 +86,46 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = () => {
   }, [isCalculatingData]);
 
   return (
-    <Flex direction="column" gap={4}>
-      <Flex gap={4}>
+    <Flex direction="column" gap={4} padding={2}>
+      <Flex
+        gap={4}
+        borderBottom="3px solid"
+        borderColor="teal.800"
+        paddingY={2}
+      >
+        <JSONFileUploader
+          label="Scores"
+          onUploadJSONString={uploadJSONPointsString}
+        />
+
+        <JSONFileUploader
+          label="Coefficients Beetwen Countries"
+          onUploadJSONString={uploadJSONCoefficientsString}
+        />
+
+        <JSONFileUploader
+          label="Coefficients voting impact"
+          onUploadJSONString={uploadJSONCoefficientsValuesString}
+        />
+      </Flex>
+
+      <Flex
+        gap={4}
+        borderBottom="3px solid"
+        borderColor="teal.800"
+        paddingY={2}
+        alignItems="center"
+      >
+        <Button
+          width={20}
+          colorScheme="teal"
+          size="sm"
+          isDisabled={!selectYear || !JSONPointsString}
+          onClick={handleCalculation}
+        >
+          Calculate
+        </Button>
+
         <YearSelectMenu
           availableYears={availableYears}
           onSelectYear={selectYear}
@@ -104,33 +142,6 @@ export const ToolsPanel: React.FC<ToolsPanelProps> = () => {
           onChangeCooefficientsUsage={toggleCalculateWithCoefficients}
         />
       </Flex>
-
-      <Flex gap={4}>
-        <JSONFileUploader
-          label="Points"
-          onUploadJSONString={uploadJSONPointsString}
-        />
-
-        <JSONFileUploader
-          label="Coefficients Beetwen Countries"
-          onUploadJSONString={uploadJSONCoefficientsString}
-        />
-
-        <JSONFileUploader
-          label="Coefficient voting impact"
-          onUploadJSONString={uploadJSONCoefficientsValuesString}
-        />
-      </Flex>
-
-      <Button
-        width={20}
-        colorScheme="teal"
-        size="sm"
-        isDisabled={!selectYear || !JSONPointsString}
-        onClick={handleCalculation}
-      >
-        Calculate
-      </Button>
 
       {votingData && !isCalculatingData && (
         <PointsTable
