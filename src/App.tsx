@@ -1,5 +1,3 @@
-import React from "react";
-
 import { ToolsPanel } from "./components/organisms";
 
 function App() {
