@@ -6,9 +6,9 @@ import {
   JSONFileUploader,
   YearSelectMenu,
 } from "../atoms";
-import { PointsTable } from "../molecules";
 import { convertJSONPointsData } from "../helpers";
 import { DetailedVotingEntity, ShortVotingEntity } from "../types";
+import { PointsTable } from "../organisms";
 
 export const MainPage: React.FC = () => {
   const [JSONPointsString, setJSONPointsString] = useState<string | null>(null);
@@ -118,7 +118,7 @@ export const MainPage: React.FC = () => {
           width={20}
           colorScheme="teal"
           size="sm"
-          isDisabled={!selectYear || !JSONPointsString}
+          isDisabled={!selectedYear || !JSONPointsString}
           onClick={handleCalculation}
         >
           Calculate
